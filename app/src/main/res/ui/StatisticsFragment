@@ -1,0 +1,57 @@
+import android.R
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.lifecycle.ViewModelProvider
+import com.example.mooddiary.MoodViewModel
+import java.util.Locale
+
+
+class StatisticsFragment : Fragment() {
+    private var moodViewModel: MoodViewModel? = null
+    private var lineChart: LineChart? = null
+    @Nullable
+    fun onCreateView(
+        inflater: LayoutInflater,
+        @Nullable container: ViewGroup?,
+        @Nullable savedInstanceState: Bundle?
+    ): View {
+        val view: View = inflater.inflate(R.layout.fragment_statistics, container, false)
+        lineChart = view.findViewById(R.id.lineChart)
+        moodViewModel = ViewModelProvider(this).get(MoodViewModel::class.java)
+        moodViewModel!!.getMoodTrends().observe(
+            getViewLifecycleOwner()
+        ) { moodStatistics: List<error.NonExistentClass> ->
+            updateChart(
+                moodStatistics
+            )
+        }
+        return view
+    }
+
+    private fun updateChart(moodStatistics: List<MoodStatistics>) {
+        val entries: MutableList<Map.Entry<*, *>> = ArrayList()
+        for (stat in moodStatistics) {
+            entries.add(
+                MutableMap.MutableEntry<Any?, Any?>( /* x */convertDateToTimestamp(stat.entryDate),  /* y */
+                    stat.avgMood
+                )
+            )
+        }
+        val dataSet = LineDataSet(entries, "Mood Trend")
+        val lineData = LineData(dataSet)
+        lineChart.setData(lineData)
+        lineChart.invalidate() // refresh
+    }
+
+    private fun convertDateToTimestamp(date: String): Float {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        try {
+            return sdf.parse(date).getTime()
+        } catch (e: ParseException) {
+            e.printStackTrace()
+        }
+        return 0
+    }
+}
